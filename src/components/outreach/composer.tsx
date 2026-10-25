@@ -237,6 +237,7 @@ export function Composer({
   initialChannel,
   initialKind,
   initialMessageId,
+  initialCampaignId,
 }: {
   ctx: ComposerContext | null;
   aiEnabled: boolean;
@@ -245,6 +246,7 @@ export function Composer({
   initialChannel: Channel | null;
   initialKind: "initial" | "follow_up" | "connection_request";
   initialMessageId: string | null;
+  initialCampaignId?: string | null;
 }) {
   const router = useRouter();
   const { run, pending } = useAction();
@@ -254,11 +256,11 @@ export function Composer({
   const [channel, setChannel] = useState<Channel>(revising?.channel ?? initialChannel ?? p?.preferredChannel ?? (p?.email ? "email" : p?.linkedinUrl ? "linkedin" : "x"));
   const [kind, setKind] = useState<"initial" | "follow_up" | "connection_request">((revising?.kind as "initial") ?? initialKind);
   const [goal, setGoal] = useState<"start_conversation" | "offer_ideas" | "agency_partnership" | "follow_up_content" | "reconnect">("start_conversation");
-  const [campaignId, setCampaignId] = useState(revising?.campaignId ?? "none");
+  const [campaignId, setCampaignId] = useState(revising?.campaignId ?? initialCampaignId ?? "none");
   const [notes, setNotes] = useState("");
   const [draft, setDraft] = useState<(OutreachDraft & { followUp?: false }) | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [tab, setTab] = useState<string>(revising ? "custom" : "short");
+  const [tab, setTab] = useState<string>("custom");
   const [bodies, setBodies] = useState<Record<string, { subject: string; body: string }>>(revising ? { custom: { subject: revising.subject ?? "", body: revising.body } } : { custom: { subject: "", body: "" } });
   const [previousId, setPreviousId] = useState<string | null>(revising?.id ?? null);
 

@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { asc, isNull } from "drizzle-orm";
-import { Download } from "lucide-react";
+import { Download, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { PageHeader } from "@/components/app/page-header";
@@ -101,9 +101,14 @@ export default async function LibraryPage({ searchParams }: PageProps<"/content/
         actions={
           <>
             <Button asChild variant="outline" size="sm">
-              <Link href="/api/export/content" prefetch={false}>
-                <Download /> Export CSV
+              <Link href="/content/import">
+                <Upload /> Import
               </Link>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a href="/api/export/content">
+                <Download /> Export
+              </a>
             </Button>
             <SaveIdeaButton pillars={pillars} />
             <NewPostButton />

@@ -55,6 +55,7 @@ export default async function ComposePage({ searchParams }: PageProps<"/outreach
         initialChannel={channel}
         initialKind={kind}
         initialMessageId={typeof sp.message === "string" ? sp.message : null}
+        initialCampaignId={typeof sp.campaign === "string" ? sp.campaign : null}
       />
     </div>
   );

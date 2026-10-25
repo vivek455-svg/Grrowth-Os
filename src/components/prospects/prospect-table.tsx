@@ -4,7 +4,6 @@ import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { AlertTriangle, Bookmark, ChevronDown, Download, Megaphone, Search, Tag, Trash2, Upload, UserPlus, Users, X as XIcon } from "lucide-react";
-import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -416,7 +415,7 @@ export function ProspectTable({ rows, options, total }: { rows: ProspectRow[]; o
       )}
       {selected.size === 0 && rows.length > 0 && (
         <p className="text-xs text-muted-foreground">
-          Tip: select rows to tag, change status, or queue them in a campaign. <button type="button" className="underline underline-offset-2" onClick={() => toast.info("Click a row to open the prospect.")}>Click a row</button> to open it.
+          Select rows to tag, change status, or queue them in a campaign. Click a row to open it.
         </p>
       )}
     </div>
