@@ -11,8 +11,10 @@ export type Tx = Parameters<Parameters<DB["transaction"]>[0]>[0];
 const globalForDb = globalThis as unknown as { __growthDb?: { db: DB; client: postgres.Sql } };
 
 function create() {
+  const url = env().DATABASE_URL;
+  if (!url) throw new Error("DATABASE_URL is not configured");
   // prepare:false keeps us compatible with Supabase's transaction pooler.
-  const client = postgres(env().DATABASE_URL, { prepare: false, max: 10, idle_timeout: 20, onnotice: () => {} });
+  const client = postgres(url, { prepare: false, max: 10, idle_timeout: 20, onnotice: () => {} });
   return { client, db: drizzle(client, { schema }) };
 }
 

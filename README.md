@@ -47,15 +47,19 @@ script refuses to run when Supabase env vars are present, and all sample compani
 3. **Set environment variables** (see `.env.example`). Use the Supabase *pooler* connection string
    (transaction mode) for `DATABASE_URL`.
 4. **Deploy.** `npm run build && npm start`, or deploy to Vercel. `vercel.json` schedules the daily
-   metrics sync; set `CRON_SECRET` to enable it.
-5. **Optional integrations** — register OAuth apps and set their keys (below).
+   metrics sync; set `CRON_SECRET` to enable it. Environment variable changes on Vercel only apply
+   after a redeploy.
+5. **Check the setup.** Until everything is configured, `/login` redirects to `/setup`, which lists each
+   missing or invalid variable by name (never its value), whether the database is reachable and migrated,
+   and whether Supabase accepts the anon key.
+6. **Optional integrations** — register OAuth apps and set their keys (below).
 
 ### Environment variables
 
 | Variable | Required | Purpose |
 |---|---|---|
 | `DATABASE_URL` | yes | Postgres connection (server only) |
-| `APP_URL` | yes | Public URL, used for OAuth redirects |
+| `APP_URL` | yes (auto on Vercel) | Public URL, used for OAuth redirects. On Vercel it defaults to the production domain |
 | `TOKEN_ENCRYPTION_KEY` | for integrations | Encrypts OAuth tokens (AES-256-GCM) |
 | `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | production | Authentication |
 | `DEMO_MODE` | no | `true` for the local demo workspace |

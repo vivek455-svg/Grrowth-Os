@@ -2,13 +2,14 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { LoginForm } from "@/components/onboarding/login-form";
 import { getSessionUser } from "@/server/auth";
+import { setupStatus } from "@/server/setup";
 import { env, supabaseConfigured } from "@/lib/env";
 
 export const metadata = { title: "Sign in" };
 
 export default async function LoginPage({ searchParams }: PageProps<"/login">) {
   await connection(); // configuration is read at request time, not build time
-  if (!supabaseConfigured()) redirect("/setup");
+  if (!supabaseConfigured() || !(await setupStatus()).ok) redirect("/setup");
   if (await getSessionUser()) redirect("/");
   const sp = await searchParams;
   const e = env();

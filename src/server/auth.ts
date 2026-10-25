@@ -4,7 +4,7 @@ import { redirect } from "next/navigation";
 import { connection } from "next/server";
 import { sql } from "drizzle-orm";
 import { asService } from "@/db/client";
-import { demoMode, supabaseConfigured } from "@/lib/env";
+import { configProblems, demoMode, supabaseConfigured } from "@/lib/env";
 import { supabaseServer } from "@/lib/supabase/server";
 
 export const DEMO_USER_ID = "00000000-0000-4000-8000-000000000001";
@@ -22,6 +22,7 @@ async function ensureDemoUser() {
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
   // Always render per request: user data must never be baked into a static page.
   await connection();
+  if (configProblems().length > 0) return null;
   if (supabaseConfigured()) {
     const supabase = await supabaseServer();
     // getUser() validates the JWT with Supabase Auth rather than trusting the cookie.
@@ -38,6 +39,6 @@ export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
 
 export async function requireUser(): Promise<SessionUser> {
   const user = await getSessionUser();
-  if (!user) redirect(supabaseConfigured() ? "/login" : "/setup");
+  if (!user) redirect(supabaseConfigured() && configProblems().length === 0 ? "/login" : "/setup");
   return user;
 }
