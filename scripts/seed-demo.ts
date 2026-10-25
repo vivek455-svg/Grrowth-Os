@@ -11,6 +11,7 @@ import postgres from "postgres";
 import { drizzle } from "drizzle-orm/postgres-js";
 import { sql } from "drizzle-orm";
 import * as s from "../src/db/schema";
+import { loadLocalEnv } from "./env";
 
 const DEMO_USER_ID = "00000000-0000-4000-8000-000000000001";
 const DAY = 86400000;
@@ -464,6 +465,7 @@ export async function seedDemo(databaseUrl: string, { reset = false } = {}) {
 }
 
 if (process.argv[1]?.endsWith("seed-demo.ts")) {
+  loadLocalEnv();
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is required");
   seedDemo(url, { reset: process.argv.includes("--reset") }).catch((e) => {

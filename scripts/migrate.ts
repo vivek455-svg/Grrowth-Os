@@ -9,6 +9,7 @@
 import { readdirSync, readFileSync } from "node:fs";
 import { join } from "node:path";
 import postgres from "postgres";
+import { loadLocalEnv } from "./env";
 
 export async function migrate(databaseUrl: string, { shim = true, log = console.log } = {}) {
   const sql = postgres(databaseUrl, { max: 1, onnotice: () => {} });
@@ -31,6 +32,7 @@ export async function migrate(databaseUrl: string, { shim = true, log = console.
 }
 
 if (process.argv[1]?.endsWith("migrate.ts")) {
+  loadLocalEnv();
   const url = process.env.DATABASE_URL;
   if (!url) throw new Error("DATABASE_URL is required");
   migrate(url, { shim: process.env.MIGRATE_SKIP_SHIM !== "1" }).then(
