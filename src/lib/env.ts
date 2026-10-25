@@ -14,11 +14,15 @@ const optional = z
 // app can show a setup checklist instead of crashing every page.
 const schema = z.object({
   DATABASE_URL: optional,
+  // Set by the Vercel ↔ Supabase integration; used when DATABASE_URL isn't set.
+  POSTGRES_URL: optional,
   APP_URL: optional,
   VERCEL_PROJECT_PRODUCTION_URL: optional,
   VERCEL_URL: optional,
   NEXT_PUBLIC_SUPABASE_URL: optional,
+  SUPABASE_URL: optional,
   NEXT_PUBLIC_SUPABASE_ANON_KEY: optional,
+  NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: optional,
   DEMO_MODE: optional,
   TOKEN_ENCRYPTION_KEY: optional,
   CRON_SECRET: optional,
@@ -38,7 +42,48 @@ const schema = z.object({
 });
 
 type Raw = z.infer<typeof schema>;
-export type Env = Omit<Raw, "APP_URL"> & { APP_URL: string };
+export type Env = Omit<Raw, "APP_URL"> & {
+  APP_URL: string;
+  /** Which variable DATABASE_URL was read from, for setup messages. */
+  DATABASE_URL_KEY: "DATABASE_URL" | "POSTGRES_URL";
+};
+
+// Connection-string parameters postgres.js understands. It forwards any other parameter to the
+// server as a session setting, so extras added by hosting integrations (supa=…, workaround=…,
+// pgbouncer=…) would make the connection fail.
+const KEEP_DB_PARAMS = new Set(["sslmode", "sslrootcert", "application_name", "options", "connect_timeout"]);
+
+export function cleanDatabaseUrl(value: string): string {
+  try {
+    const url = new URL(value);
+    const extra = [...url.searchParams.keys()].filter((k) => !KEEP_DB_PARAMS.has(k));
+    if (extra.length === 0) return value;
+    for (const k of extra) url.searchParams.delete(k);
+    return url.toString();
+  } catch {
+    return value;
+  }
+}
+
+const hasPasswordPlaceholder = (value?: string) => Boolean(value && /\[YOUR-PASSWORD\]/i.test(value));
+
+/**
+ * Applies fallbacks: the integration's POSTGRES_URL when DATABASE_URL is unset or still holds
+ * Supabase's [YOUR-PASSWORD] placeholder, the integration's Supabase key names, and the Vercel
+ * domain for APP_URL.
+ */
+function resolve(raw: Partial<Raw>): Env {
+  const useIntegration = Boolean(raw.POSTGRES_URL) && (!raw.DATABASE_URL || hasPasswordPlaceholder(raw.DATABASE_URL));
+  const db = useIntegration ? raw.POSTGRES_URL : raw.DATABASE_URL;
+  return {
+    ...(raw as Raw),
+    DATABASE_URL: db ? cleanDatabaseUrl(db) : undefined,
+    DATABASE_URL_KEY: useIntegration ? "POSTGRES_URL" : "DATABASE_URL",
+    NEXT_PUBLIC_SUPABASE_URL: raw.NEXT_PUBLIC_SUPABASE_URL ?? raw.SUPABASE_URL,
+    NEXT_PUBLIC_SUPABASE_ANON_KEY: raw.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? raw.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY,
+    APP_URL: resolveAppUrl(raw) ?? "http://localhost:3000",
+  };
+}
 
 /** APP_URL, else the Vercel production domain, else localhost. Adds https:// when the scheme is missing. */
 export function resolveAppUrl(raw: Partial<Pick<Raw, "APP_URL" | "VERCEL_PROJECT_PRODUCTION_URL" | "VERCEL_URL">>): string | null {
@@ -57,8 +102,7 @@ let cached: Env | null = null;
 
 export function env(): Env {
   if (cached) return cached;
-  const parsed = schema.parse(process.env);
-  cached = { ...parsed, APP_URL: resolveAppUrl(parsed) ?? "http://localhost:3000" };
+  cached = resolve(schema.parse(process.env));
   return cached;
 }
 
@@ -82,16 +126,21 @@ function supabaseKeyRole(key: string) {
 }
 
 /** Every missing or malformed setting, by variable name. Never includes values. */
-export function findConfigProblems(raw: Partial<Raw>): ConfigProblem[] {
+export function findConfigProblems(input: Partial<Raw>): ConfigProblem[] {
+  const raw = resolve(input);
   const problems: ConfigProblem[] = [];
   const db = raw.DATABASE_URL;
+  const dbKey = raw.DATABASE_URL_KEY;
   if (!db) {
-    problems.push({ key: "DATABASE_URL", message: "Not set. On Supabase, copy the pooler connection string (Connect → Transaction pooler, port 6543)." });
-  } else if (/\[YOUR-PASSWORD\]/i.test(db)) {
-    problems.push({ key: "DATABASE_URL", message: "Still contains [YOUR-PASSWORD]. Replace it with your database password." });
-  } else if (!isUrl(db, ["postgres:", "postgresql:"])) {
     problems.push({
       key: "DATABASE_URL",
+      message: "Not set. Connect the Supabase integration in Vercel (it adds POSTGRES_URL), or paste Supabase's Transaction pooler connection string (port 6543).",
+    });
+  } else if (hasPasswordPlaceholder(db)) {
+    problems.push({ key: dbKey, message: "Still contains [YOUR-PASSWORD]. Replace it with your database password." });
+  } else if (!isUrl(db, ["postgres:", "postgresql:"])) {
+    problems.push({
+      key: dbKey,
       message: "Isn't a valid postgres:// connection string. If the password contains characters like @ # / ? %, URL-encode them.",
     });
   }
@@ -118,7 +167,7 @@ export function findConfigProblems(raw: Partial<Raw>): ConfigProblem[] {
     }
   }
 
-  if (!resolveAppUrl(raw)) {
+  if (!resolveAppUrl(input)) {
     problems.push({ key: "APP_URL", message: "Must be the site's full address, like https://your-app.vercel.app (or leave it unset on Vercel)." });
   }
   return problems;

@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { findConfigProblems, resolveAppUrl } from "@/lib/env";
+import { cleanDatabaseUrl, findConfigProblems, resolveAppUrl } from "@/lib/env";
 
 const DB = "postgresql://postgres.abc:secret@aws-0-us-east-1.pooler.supabase.com:6543/postgres";
 const SUPABASE = { NEXT_PUBLIC_SUPABASE_URL: "https://abc.supabase.co", NEXT_PUBLIC_SUPABASE_ANON_KEY: "sb_publishable_x" };
@@ -39,6 +39,29 @@ describe("findConfigProblems", () => {
 
   it("reports an unusable APP_URL", () => {
     expect(keys({ DATABASE_URL: DB, ...SUPABASE, APP_URL: "my app" })).toEqual(["APP_URL"]);
+  });
+});
+
+describe("Vercel Supabase integration variables", () => {
+  const POSTGRES_URL = `${DB}?sslmode=require&supa=base-pooler.x`;
+
+  it("uses POSTGRES_URL when DATABASE_URL is unset or still has the placeholder", () => {
+    expect(findConfigProblems({ ...SUPABASE, POSTGRES_URL })).toEqual([]);
+    expect(findConfigProblems({ ...SUPABASE, POSTGRES_URL, DATABASE_URL: DB.replace("secret", "[YOUR-PASSWORD]") })).toEqual([]);
+  });
+
+  it("prefers a real DATABASE_URL over POSTGRES_URL", () => {
+    expect(keys({ ...SUPABASE, POSTGRES_URL, DATABASE_URL: "not a url" })).toEqual(["DATABASE_URL"]);
+  });
+
+  it("accepts the publishable key and SUPABASE_URL names", () => {
+    expect(findConfigProblems({ DATABASE_URL: DB, SUPABASE_URL: SUPABASE.NEXT_PUBLIC_SUPABASE_URL, NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY: "sb_publishable_x" })).toEqual([]);
+  });
+
+  it("drops connection parameters postgres.js would send to the server as settings", () => {
+    expect(cleanDatabaseUrl(POSTGRES_URL)).toBe(`${DB}?sslmode=require`);
+    expect(cleanDatabaseUrl(`${DB}?workaround=supabase-pooler.vercel&pgbouncer=true`)).toBe(DB);
+    expect(cleanDatabaseUrl(DB)).toBe(DB);
   });
 });
 

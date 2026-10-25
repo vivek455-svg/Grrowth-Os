@@ -85,12 +85,12 @@ export async function setupStatus(): Promise<SetupStatus> {
   const problems = configProblems();
   const has = (key: string) => problems.some((p) => p.key === key);
   const [dbProblem, supabaseProblem] = await Promise.all([
-    has("DATABASE_URL") ? null : checkDatabase(e.DATABASE_URL!),
+    has(e.DATABASE_URL_KEY) || !e.DATABASE_URL ? null : checkDatabase(e.DATABASE_URL),
     has("NEXT_PUBLIC_SUPABASE_URL") || has("NEXT_PUBLIC_SUPABASE_ANON_KEY") || !e.NEXT_PUBLIC_SUPABASE_URL
       ? null
       : checkSupabase(e.NEXT_PUBLIC_SUPABASE_URL, e.NEXT_PUBLIC_SUPABASE_ANON_KEY!),
   ]);
-  if (dbProblem) problems.push({ key: "DATABASE_URL", message: dbProblem });
+  if (dbProblem) problems.push({ key: e.DATABASE_URL_KEY, message: dbProblem });
   if (supabaseProblem) problems.push(supabaseProblem);
   if (problems.length === 0) lastOk = Date.now();
   return { ok: problems.length === 0, problems, appUrl: e.APP_URL };

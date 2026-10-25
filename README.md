@@ -58,10 +58,10 @@ script refuses to run when Supabase env vars are present, and all sample compani
 
 | Variable | Required | Purpose |
 |---|---|---|
-| `DATABASE_URL` | yes | Postgres connection (server only) |
+| `DATABASE_URL` | yes | Postgres connection (server only). Falls back to `POSTGRES_URL` from the Vercel ↔ Supabase integration |
 | `APP_URL` | yes (auto on Vercel) | Public URL, used for OAuth redirects. On Vercel it defaults to the production domain |
 | `TOKEN_ENCRYPTION_KEY` | for integrations | Encrypts OAuth tokens (AES-256-GCM) |
-| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | production | Authentication |
+| `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` | production | Authentication (the integration's `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY` also works) |
 | `DEMO_MODE` | no | `true` for the local demo workspace |
 | `ANTHROPIC_API_KEY`, `AI_MODEL` | no | AI features (default model `claude-opus-5-5`) |
 | `X_CLIENT_ID`, `X_CLIENT_SECRET` | no | X publishing + metrics sync |
