@@ -93,11 +93,11 @@ function GlobalSearch() {
     <>
       <Button
         variant="outline"
-        className="h-8 w-full max-w-xs justify-start gap-2 bg-background px-2.5 font-normal text-muted-foreground sm:w-64"
+        className="h-8 min-w-0 flex-1 justify-start gap-2 bg-background px-2.5 font-normal text-muted-foreground sm:w-64 sm:flex-none"
         onClick={() => setOpen(true)}
       >
         <Search className="size-4" />
-        <span className="flex-1 text-left">Search…</span>
+        <span className="flex-1 truncate text-left">Search…</span>
         <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen} title="Search" description="Search prospects, content, campaigns and opportunities">
@@ -293,7 +293,7 @@ export function AppHeader({
       <SidebarTrigger className="-ml-1" />
       <Separator orientation="vertical" className="mr-1 data-[orientation=vertical]:h-4" />
       <GlobalSearch />
-      <div className="ml-auto flex items-center gap-1">
+      <div className="ml-auto flex shrink-0 items-center gap-1">
         <QuickCreate />
         <Notifications items={notifications} />
         <AccountMenu name={name} email={email} isDemo={isDemo} />

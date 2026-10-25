@@ -17,10 +17,10 @@ import { getAIProvider, withGeneration } from "@/server/ai";
 import { UNTRUSTED_RULE, positioningBlock, untrusted, validateOutreach } from "@/server/ai/prompts";
 import { FetchBlockedError, fetchPublicPage, type ExtractedPage } from "@/server/integrations/website";
 import { followUpBlock } from "@/lib/domain/outreach-rules";
+import { reconcileObservations } from "@/lib/domain/research";
 import { log } from "@/lib/logger";
 
 const uuid = z.string().uuid();
-const norm = (s: string) => s.toLowerCase().replace(/[^a-z0-9 ]+/g, " ").replace(/\s+/g, " ").trim();
 
 const researchSchema = z.object({
   what_they_do: z.string().describe("One or two sentences, only from the page content"),
@@ -109,15 +109,7 @@ export const runResearch = defineAIAction(
         });
         return { ...res, output: JSON.stringify(res.data) };
       });
-      const haystack = norm(pageText);
-      const observations: ResearchObservation[] = data.observations.map((o) => {
-        const supported = o.kind === "verified" && o.evidence_quote && haystack.includes(norm(o.evidence_quote));
-        return {
-          text: o.kind === "verified" && !supported ? `${o.text} (couldn't match a quote on the page — treat as unverified)` : o.text,
-          kind: supported ? "verified" : "hypothesis",
-          source_url: supported ? page.finalUrl : null,
-        };
-      });
+      const observations = reconcileObservations(data.observations, pageText, page.finalUrl);
       row = {
         ...row,
         whatTheyDo: data.what_they_do,

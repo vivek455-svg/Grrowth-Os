@@ -206,7 +206,8 @@ export function CalendarView({
             )}
           </Card>
         ) : (
-          <Card className={cn("gap-0 overflow-hidden p-0 transition-opacity", isPending && "opacity-70")}>
+          <Card className={cn("gap-0 overflow-x-auto p-0 transition-opacity", isPending && "opacity-70")}>
+            <div className="min-w-[720px]">
             <div className="grid grid-cols-7 border-b bg-muted/40 text-xs text-muted-foreground">
               {["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"].map((d) => (
                 <div key={d} className="px-2 py-1.5 font-medium">{d}</div>
@@ -258,6 +259,7 @@ export function CalendarView({
                   </div>
                 );
               })}
+            </div>
             </div>
           </Card>
         )}

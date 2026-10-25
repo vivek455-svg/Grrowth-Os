@@ -29,8 +29,9 @@ export class AnthropicProvider implements AIProvider {
   constructor(
     apiKey: string,
     readonly model: string,
+    opts: { fetch?: typeof fetch; maxRetries?: number } = {},
   ) {
-    this.client = new Anthropic({ apiKey, timeout: 120_000, maxRetries: 2 });
+    this.client = new Anthropic({ apiKey, timeout: 120_000, maxRetries: opts.maxRetries ?? 2, fetch: opts.fetch });
   }
 
   async generateObject<T>(opts: Parameters<AIProvider["generateObject"]>[0] & { schema: import("zod").ZodType<T> }) {
