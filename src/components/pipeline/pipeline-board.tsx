@@ -18,10 +18,11 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { OpportunityDialog } from "./opportunity-dialog";
 import { addPipelineStage, addTouchpoint, deleteOpportunity, deleteStage, moveOpportunity, removeTouchpoint, renameStage } from "@/server/actions/pipeline";
 import { useAction } from "@/hooks/use-action";
-import { fmtDate, fmtMoney, fmtRelative } from "@/lib/format";
+import { fmtDate, fmtMoney } from "@/lib/format";
 import { SOURCE_CHANNEL_LABEL } from "@/lib/labels";
 import type { Opportunity, SourceChannel } from "@/db/schema";
 import { cn } from "@/lib/utils";
+import { TimeAgo } from "@/components/app/time-ago";
 
 type Stage = { key: string; label: string; kind: "open" | "won" | "lost"; sortOrder: number };
 type Row = { o: Opportunity; prospectName: string | null; campaign: string | null; content: string | null };
@@ -126,7 +127,7 @@ function DetailSheet({
             </div>
             <div>
               <p className="text-xs text-muted-foreground">Last activity</p>
-              <p>{fmtRelative(o.lastActivityAt ?? o.createdAt)}</p>
+              <p><TimeAgo date={o.lastActivityAt ?? o.createdAt} /></p>
             </div>
             <div className="col-span-2">
               <p className="text-xs text-muted-foreground">Prospect</p>
@@ -379,7 +380,7 @@ export function PipelineBoard({
                   <TableCell className="hidden md:table-cell">{r.o.sourceChannel ? SOURCE_CHANNEL_LABEL[r.o.sourceChannel] : "—"}</TableCell>
                   <TableCell className="num hidden md:table-cell">{fmtDate(r.o.expectedCloseDate)}</TableCell>
                   <TableCell className="hidden max-w-48 truncate lg:table-cell">{r.o.nextAction ?? "—"}</TableCell>
-                  <TableCell className="num hidden pr-4 text-muted-foreground lg:table-cell">{fmtRelative(r.o.lastActivityAt ?? r.o.createdAt)}</TableCell>
+                  <TableCell className="num hidden pr-4 text-muted-foreground lg:table-cell"><TimeAgo date={r.o.lastActivityAt ?? r.o.createdAt} /></TableCell>
                 </TableRow>
               ))}
               {rows.length === 0 && (

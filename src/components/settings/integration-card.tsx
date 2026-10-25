@@ -10,8 +10,8 @@ import { Badge } from "@/components/ui/badge";
 import { Spinner } from "@/components/ui/spinner";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { disconnectIntegration, syncIntegration } from "@/server/actions/integrations";
-import { fmtDateTime, fmtRelative } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { TimeAgo } from "@/components/app/time-ago";
 
 export type IntegrationView = {
   key: string;
@@ -87,7 +87,7 @@ export function IntegrationCard({ i, isDemo }: { i: IntegrationView; isDemo: boo
             {i.kind === "oauth" && i.status !== "not_configured" && (
               <div>
                 <dt className="text-muted-foreground">Last successful sync</dt>
-                <dd>{i.lastSyncAt ? <span title={fmtDateTime(i.lastSyncAt)}>{fmtRelative(i.lastSyncAt)}</span> : "Never"}</dd>
+                <dd>{i.lastSyncAt ? <TimeAgo date={i.lastSyncAt} /> : "Never"}</dd>
               </div>
             )}
           </dl>
@@ -95,7 +95,7 @@ export function IntegrationCard({ i, isDemo }: { i: IntegrationView; isDemo: boo
         {i.lastError && (
           <p className="rounded-md bg-danger-soft px-2.5 py-1.5 text-xs text-destructive">
             {i.lastError}
-            {i.lastErrorAt ? ` · ${fmtRelative(i.lastErrorAt)}` : ""}
+            {i.lastErrorAt ? <> · <TimeAgo date={i.lastErrorAt} /></> : ""}
           </p>
         )}
         <div>

@@ -24,6 +24,7 @@ import { SidebarTrigger } from "@/components/ui/sidebar";
 import { Separator } from "@/components/ui/separator";
 import { Kbd } from "@/components/ui/kbd";
 import {
+  Command,
   CommandDialog,
   CommandEmpty,
   CommandGroup,
@@ -100,6 +101,7 @@ function GlobalSearch() {
         <Kbd className="hidden sm:inline-flex">⌘K</Kbd>
       </Button>
       <CommandDialog open={open} onOpenChange={setOpen} title="Search" description="Search prospects, content, campaigns and opportunities">
+        <Command shouldFilter={false}>
         <CommandInput placeholder="Search prospects, posts, campaigns…" value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>No results.</CommandEmpty>
@@ -165,6 +167,7 @@ function GlobalSearch() {
             </CommandItem>
           </CommandGroup>
         </CommandList>
+        </Command>
       </CommandDialog>
     </>
   );

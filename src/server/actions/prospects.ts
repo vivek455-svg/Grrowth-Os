@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { and, eq, inArray, lt, sql } from "drizzle-orm";
+import { and, desc, eq, inArray, sql } from "drizzle-orm";
 import {
   campaignProspects,
   conversationEvents,
@@ -243,11 +243,19 @@ export const logInteraction = defineAction(
     await tx.update(prospects).set(patch).where(eq(prospects.id, p.id));
 
     if (isInbound) {
-      // Never follow up on someone who just replied: cancel pending follow-ups due after the reply was received.
-      await tx
-        .update(followUps)
-        .set({ status: "cancelled", reason: sql`coalesce(${followUps.reason} || ' — ', '') || 'Cancelled: prospect replied'` })
-        .where(and(eq(followUps.prospectId, p.id), eq(followUps.status, "pending"), lt(followUps.createdAt, input.occurredAt)));
+      // Never follow up on someone who replied after our last message. Logged times have minute
+      // precision, so a reply in the same minute as the send still counts as "after".
+      const [lastOut] = await tx
+        .select({ at: conversationEvents.occurredAt })
+        .from(conversationEvents)
+        .where(and(eq(conversationEvents.prospectId, p.id), eq(conversationEvents.direction, "outbound")))
+        .orderBy(desc(conversationEvents.occurredAt))
+        .limit(1);
+      if (!lastOut || input.occurredAt.getTime() >= lastOut.at.getTime() - 60_000)
+        await tx
+          .update(followUps)
+          .set({ status: "cancelled", reason: sql`coalesce(${followUps.reason} || ' — ', '') || 'Cancelled: prospect replied'` })
+          .where(and(eq(followUps.prospectId, p.id), eq(followUps.status, "pending")));
       if (input.campaignId)
         await tx.update(campaignProspects).set({ state: "replied" }).where(and(eq(campaignProspects.prospectId, p.id), eq(campaignProspects.campaignId, input.campaignId)));
     }

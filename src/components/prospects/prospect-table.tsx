@@ -31,10 +31,11 @@ import { useShell } from "@/components/app/shell-context";
 import { bulkUpdateProspects, deleteView, saveView } from "@/server/actions/prospects";
 import { addToCampaign } from "@/server/actions/pipeline";
 import { useAction } from "@/hooks/use-action";
-import { fmtDate, fmtRelative, hostname } from "@/lib/format";
+import { fmtDate, hostname } from "@/lib/format";
 import { CHANNEL_LABEL, PRIORITY_LABEL } from "@/lib/labels";
 import type { Channel, Priority } from "@/db/schema";
 import { cn } from "@/lib/utils";
+import { TimeAgo } from "@/components/app/time-ago";
 
 export type ProspectRow = {
   id: string;
@@ -398,7 +399,7 @@ export function ProspectTable({ rows, options, total }: { rows: ProspectRow[]; o
                     </TableCell>
                     <TableCell><FitScore score={r.fitScore} /></TableCell>
                     <TableCell className="hidden text-muted-foreground lg:table-cell">{r.preferredChannel ? CHANNEL_LABEL[r.preferredChannel] : "—"}</TableCell>
-                    <TableCell className="num hidden text-muted-foreground lg:table-cell">{r.lastContactedAt ? fmtRelative(r.lastContactedAt) : "Never"}</TableCell>
+                    <TableCell className="num hidden text-muted-foreground lg:table-cell">{r.lastContactedAt ? <TimeAgo date={r.lastContactedAt} /> : "Never"}</TableCell>
                     <TableCell className={cn("num hidden sm:table-cell", overdue ? "font-medium text-destructive" : "text-muted-foreground")}>
                       {r.nextFollowUpAt ? fmtDate(r.nextFollowUpAt, "MMM d") : "—"}
                     </TableCell>

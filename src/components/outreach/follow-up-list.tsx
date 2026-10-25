@@ -7,8 +7,9 @@ import { Button } from "@/components/ui/button";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { scheduleFollowUp, updateFollowUp } from "@/server/actions/prospects";
 import { useAction } from "@/hooks/use-action";
-import { fmtDate, fmtDateTime, fmtRelative, truncate } from "@/lib/format";
+import { fmtDate, fmtDateTime, truncate } from "@/lib/format";
 import { cn } from "@/lib/utils";
+import { TimeAgo } from "@/components/app/time-ago";
 
 export type FollowUpItem = {
   id: string;
@@ -38,7 +39,7 @@ export function FollowUpRows({ items, tone }: { items: FollowUpItem[]; tone?: "d
               <Link href={`/prospects/${f.prospectId}`} className="font-medium hover:underline">{f.name}</Link>
               {f.company && <span className="text-xs text-muted-foreground">{f.company}</span>}
               <span className={cn("num text-xs", tone === "danger" ? "font-medium text-destructive" : "text-muted-foreground")}>
-                {tone === "danger" ? `Overdue · ${fmtRelative(f.dueAt)}` : fmtDateTime(f.dueAt)}
+                {tone === "danger" ? <>Overdue · <TimeAgo date={f.dueAt} /></> : fmtDateTime(f.dueAt)}
               </span>
             </div>
             {f.reason && <p className="text-sm">{f.reason}</p>}

@@ -16,6 +16,7 @@ import { UserError, defineAction, defineAIAction } from "@/server/action";
 import { getAIProvider, withGeneration } from "@/server/ai";
 import { UNTRUSTED_RULE, positioningBlock, untrusted, validateOutreach } from "@/server/ai/prompts";
 import { FetchBlockedError, fetchPublicPage, type ExtractedPage } from "@/server/integrations/website";
+import { followUpBlock } from "@/lib/domain/outreach-rules";
 import { log } from "@/lib/logger";
 
 const uuid = z.string().uuid();
@@ -327,7 +328,8 @@ export const generateFollowUp = defineAIAction(
     const lastOut = [...history].reverse().find((e) => e.direction === "outbound");
     const lastIn = [...history].reverse().find((e) => e.direction === "inbound");
     if (!lastOut) throw new UserError("There's no earlier outbound message to follow up on.");
-    if (lastIn && lastIn.occurredAt > lastOut.occurredAt) throw new UserError("They replied after your last message — reply to the conversation instead of sending a follow-up.");
+    const block = followUpBlock({ lastOutboundAt: lastOut.occurredAt, lastInboundAt: lastIn?.occurredAt ?? null, suppression: null });
+    if (block) throw new UserError(block);
     if (p.status === "do_not_contact") throw new UserError("This prospect is marked do not contact.");
     const historyText = history
       .filter((e) => e.content && (e.direction !== "internal" || e.type === "note"))

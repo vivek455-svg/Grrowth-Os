@@ -62,6 +62,10 @@ describe("cooldown and follow-up guards", () => {
     expect(
       followUpBlock({ lastOutboundAt: new Date("2026-10-05"), lastInboundAt: new Date("2026-10-03"), suppression: null }),
     ).toBeNull();
+    // Same-minute reply (datetime inputs drop seconds) still blocks the follow-up.
+    expect(
+      followUpBlock({ lastOutboundAt: new Date("2026-10-05T12:00:40Z"), lastInboundAt: new Date("2026-10-05T12:00:00Z"), suppression: null }),
+    ).toMatch(/replied/);
   });
 });
 

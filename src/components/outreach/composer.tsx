@@ -40,9 +40,10 @@ import { generateFollowUp, generateOutreach, saveMessageDraft, type OutreachDraf
 import { approveMessage, cancelMessage, recordManualSend, sendEmailViaGmail } from "@/server/actions/sending";
 import { useAction } from "@/hooks/use-action";
 import { CHANNEL_LABEL } from "@/lib/labels";
-import { fmtDateTime, fmtRelative, toLocalInput } from "@/lib/format";
+import { fmtDateTime, toLocalInput } from "@/lib/format";
 import type { Channel, OutreachMessage, ResearchObservation } from "@/db/schema";
 import { cn } from "@/lib/utils";
+import { TimeAgo } from "@/components/app/time-ago";
 
 export type ComposerContext = {
   prospect: {
@@ -357,7 +358,7 @@ export function Composer({
                   <li className="flex gap-1.5"><CheckCircle2 className="mt-0.5 size-3 shrink-0 text-success" /> Not suppressed or opted out</li>
                   <li className={cn("flex gap-1.5", ctx.cooldown && "text-warning")}>
                     {ctx.cooldown ? <AlertTriangle className="mt-0.5 size-3 shrink-0" /> : <CheckCircle2 className="mt-0.5 size-3 shrink-0 text-success" />}
-                    {ctx.cooldown ?? (p.lastContactedAt ? `Last contacted ${fmtRelative(p.lastContactedAt)}` : "Never contacted")}
+                    {ctx.cooldown ?? (p.lastContactedAt ? <span>Last contacted <TimeAgo date={p.lastContactedAt} /></span> : "Never contacted")}
                   </li>
                   {ctx.replyPending && (
                     <li className="flex gap-1.5 text-warning"><AlertTriangle className="mt-0.5 size-3 shrink-0" /> They replied last — respond to the conversation, not a follow-up.</li>
@@ -395,7 +396,7 @@ export function Composer({
                 <ul className="space-y-2 text-xs">
                   {ctx.recent.slice(0, 4).map((e) => (
                     <li key={e.id}>
-                      <span className="text-muted-foreground">{e.direction === "inbound" ? "They" : "You"} · {fmtRelative(e.occurredAt)}</span>
+                      <span className="text-muted-foreground">{e.direction === "inbound" ? "They" : "You"} · <TimeAgo date={e.occurredAt} /></span>
                       <p className="line-clamp-2">{e.content}</p>
                     </li>
                   ))}

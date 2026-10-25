@@ -109,7 +109,8 @@ export function followUpBlock(input: {
   suppression: string | null;
 }): string | null {
   if (input.suppression) return input.suppression;
-  if (input.lastInboundAt && (!input.lastOutboundAt || input.lastInboundAt > input.lastOutboundAt))
+  // Logged times have minute precision: a reply in the same minute as our message counts as after it.
+  if (input.lastInboundAt && (!input.lastOutboundAt || input.lastInboundAt.getTime() >= input.lastOutboundAt.getTime() - 60_000))
     return "The prospect replied after your last message — respond to the conversation instead of a follow-up.";
   return null;
 }

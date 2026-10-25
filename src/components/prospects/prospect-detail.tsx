@@ -36,10 +36,11 @@ import { Timeline } from "./timeline";
 import { OpportunityDialog } from "@/components/pipeline/opportunity-dialog";
 import { deleteProspect, updateFollowUp, updateProspect } from "@/server/actions/prospects";
 import { useAction } from "@/hooks/use-action";
-import { fmtDate, fmtDateTime, fmtMoney, fmtRelative, hostname } from "@/lib/format";
+import { fmtDate, fmtDateTime, fmtMoney, hostname } from "@/lib/format";
 import { CHANNEL_LABEL, PRIORITY_LABEL } from "@/lib/labels";
 import type { prospectDetail } from "@/server/queries/prospects";
 import { cn } from "@/lib/utils";
+import { TimeAgo } from "@/components/app/time-ago";
 
 type Detail = NonNullable<Awaited<ReturnType<typeof prospectDetail>>>;
 
@@ -276,11 +277,11 @@ export function ProspectDetail({ d, aiEnabled, campaigns }: { d: Detail; aiEnabl
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Last contacted</p>
-                  <p>{p.lastContactedAt ? fmtRelative(p.lastContactedAt) : "Never"}</p>
+                  <p>{p.lastContactedAt ? <TimeAgo date={p.lastContactedAt} /> : "Never"}</p>
                 </div>
                 <div>
                   <p className="text-xs text-muted-foreground">Last interaction</p>
-                  <p>{p.lastInteractionAt ? fmtRelative(p.lastInteractionAt) : "—"}</p>
+                  <p><TimeAgo date={p.lastInteractionAt} /></p>
                 </div>
               </div>
               {awaitingReply && (

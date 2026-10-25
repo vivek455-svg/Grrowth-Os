@@ -68,7 +68,7 @@ const BANNED_OUTREACH = [
 export function validateOutreach(body: string, sourceText: string, claims: { claim: string; support: string }[]): string[] {
   const warnings: string[] = [];
   for (const re of BANNED_OUTREACH) if (re.test(body)) warnings.push(`Generic or risky phrasing: “${body.match(re)?.[0]}”`);
-  const numbers = body.match(/\b\d[\d,.]*\s?(%|x|k|m)?\b/gi) ?? [];
+  const numbers = body.match(/\b\d[\d,.]*(?:\s?(?:%|x\b|k\b|m\b))?/gi) ?? [];
   for (const n of numbers) {
     const core = n.replace(/[^\d.]/g, "");
     if (core.length && !sourceText.includes(core)) warnings.push(`Number “${n.trim()}” isn't in your research or notes — verify or remove it.`);
