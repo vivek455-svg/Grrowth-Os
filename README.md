@@ -14,19 +14,24 @@ Everything works without external APIs: integrations add automation, but every f
 
 ## Quick start (local demo)
 
-Requirements: Node 22+, PostgreSQL 15+ (local).
+Requirements: Node 22+, PostgreSQL 15+ running locally (Docker is the easiest way).
 
 ```bash
+# 1. Postgres (skip if you already run one; the user must be a superuser locally)
+docker run -d --name growth-pg -e POSTGRES_USER=growth -e POSTGRES_PASSWORD=growth \
+  -e POSTGRES_DB=growth_os -p 5432:5432 postgres:16
+
+# 2. App
 npm install
-cp .env.example .env.local
-# edit .env.local:
-#   DATABASE_URL=postgres://<user>:<pass>@localhost:5432/growth_os
-#   DEMO_MODE=true
-#   TOKEN_ENCRYPTION_KEY=$(openssl rand -base64 32)
-createdb growth_os
-npm run db:reset-local   # applies migrations + seeds the clearly-labelled demo workspace
-npm run dev              # http://localhost:3000
+cp .env.example .env.local      # Windows: copy .env.example .env.local
+# edit .env.local: set DEMO_MODE=true (and DATABASE_URL if your Postgres differs)
+npm run db:reset-local          # creates the DB, applies migrations, seeds the demo workspace
+npm run dev                     # open http://localhost:3000
 ```
+
+`db:reset-local` reads `.env.local`, works on macOS, Linux and Windows, and refuses to touch a
+non-local host. `TOKEN_ENCRYPTION_KEY` (`openssl rand -base64 32`) is only needed once you connect
+integrations.
 
 Demo mode signs you in as a fixed demo user. It is **ignored whenever Supabase is configured**, the seed
 script refuses to run when Supabase env vars are present, and all sample companies use the reserved
