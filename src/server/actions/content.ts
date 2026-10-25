@@ -11,6 +11,7 @@ import {
   contentPlatformVersions,
   contentTags,
   audienceSnapshots,
+  contentCampaigns,
 } from "@/db/schema";
 import { UserError, audit, defineAction, optionalDate, optionalText, optionalUrl } from "@/server/action";
 import type { Tx } from "@/db/client";
@@ -366,3 +367,21 @@ export const setIdeaStatus = defineAction(
     return null;
   },
 );
+
+// ---------------------------------------------------------------------------
+// Content campaigns (groups of posts, e.g. a launch week or a teardown series)
+// ---------------------------------------------------------------------------
+export const saveContentCampaign = defineAction(
+  "content_campaign.save",
+  z.object({ name: z.string().trim().min(1).max(120), description: optionalText(1000), startDate: z.string().optional().nullable().transform((v) => v || null), endDate: z.string().optional().nullable().transform((v) => v || null) }),
+  async (input, { tx }) => {
+    if (input.startDate && input.endDate && input.endDate < input.startDate) throw new UserError("End date must be after the start date.");
+    const [c] = await tx.insert(contentCampaigns).values(input).returning({ id: contentCampaigns.id });
+    return { id: c!.id };
+  },
+);
+
+export const deleteContentCampaign = defineAction("content_campaign.delete", z.object({ id: uuid }), async ({ id }, { tx }) => {
+  await tx.delete(contentCampaigns).where(eq(contentCampaigns.id, id));
+  return null;
+});

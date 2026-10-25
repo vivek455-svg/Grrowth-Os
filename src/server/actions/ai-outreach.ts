@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { and, asc, desc, eq, inArray } from "drizzle-orm";
+import { and, asc, count, desc, eq, gte, inArray, sql } from "drizzle-orm";
 import {
   conversationEvents,
   outreachCampaigns,
@@ -51,6 +51,11 @@ export const runResearch = defineAIAction(
     if (!p) throw new UserError("Prospect not found.");
     const target = url ?? p.websiteUrl ?? p.companyWebsite;
     if (!target) throw new UserError("Add a website URL to research.");
+    // Per-user limit on outbound website fetches (protects third-party sites and our server).
+    const [recent] = await db((tx) =>
+      tx.select({ n: count() }).from(prospectResearch).where(and(gte(prospectResearch.createdAt, new Date(Date.now() - 3600_000)), sql`${prospectResearch.generatedBy} <> 'manual'`)),
+    );
+    if ((recent?.n ?? 0) >= 30) throw new UserError("You've researched 30 websites in the last hour. Try again later.");
 
     let page: ExtractedPage;
     try {

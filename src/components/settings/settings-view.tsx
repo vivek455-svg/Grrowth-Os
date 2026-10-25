@@ -17,7 +17,7 @@ import { Spinner } from "@/components/ui/spinner";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { deleteAccount, deletePortfolioProject, savePortfolioProject, updateProfile } from "@/server/actions/settings";
-import { archivePillar, savePillar } from "@/server/actions/content";
+import { archivePillar, deleteContentCampaign, saveContentCampaign, savePillar } from "@/server/actions/content";
 import { addLeadStatus, deleteLeadStatus, renameLeadStatus } from "@/server/actions/pipeline";
 import { addSuppression, removeSuppression } from "@/server/actions/prospects";
 import { useAction } from "@/hooks/use-action";
@@ -28,6 +28,7 @@ type Props = {
   profile: Profile;
   portfolio: { id: string; name: string; url: string | null; description: string | null; verifiedOutcomes: string | null }[];
   pillars: { id: string; name: string; description: string | null; archivedAt: Date | null }[];
+  contentCampaigns: { id: string; name: string; startDate: string | null; endDate: string | null }[];
   statuses: { key: string; label: string; category: string; isSystem: boolean }[];
   suppression: { id: string; email: string | null; domain: string | null; linkedinUrl: string | null; xHandle: string | null; reason: string; createdAt: Date }[];
   audit: { id: string; action: string; entityType: string | null; createdAt: Date; metadata: Record<string, unknown> }[];
@@ -176,6 +177,41 @@ function PillarsTab({ pillars }: { pillars: Props["pillars"] }) {
         <div className="flex gap-2">
           <Input placeholder="New pillar, e.g. Framer development tips" value={name} onChange={(e) => setName(e.target.value)} aria-label="New pillar" />
           <Button disabled={pending || !name.trim()} onClick={() => run(() => savePillar({ name }), { success: "Pillar added", onSuccess: () => setName("") })}>
+            <Plus /> Add
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+function ContentCampaignsCard({ campaigns }: { campaigns: Props["contentCampaigns"] }) {
+  const { run, pending } = useAction();
+  const [v, setV] = useState({ name: "", startDate: "", endDate: "" });
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Content campaigns</CardTitle>
+        <CardDescription>Group posts into a series or launch, then assign posts to it in the post editor.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <ul className="divide-y rounded-md border">
+          {campaigns.map((c) => (
+            <li key={c.id} className="flex items-center gap-3 px-3 py-2 text-sm">
+              <span className="min-w-0 flex-1 truncate">{c.name}</span>
+              <span className="text-xs text-muted-foreground">{[c.startDate, c.endDate].filter(Boolean).join(" → ")}</span>
+              <Button size="icon-xs" variant="ghost" aria-label={`Delete ${c.name}`} onClick={() => run(() => deleteContentCampaign({ id: c.id }), { success: "Deleted" })}>
+                <Trash2 />
+              </Button>
+            </li>
+          ))}
+          {campaigns.length === 0 && <li className="px-3 py-3 text-sm text-muted-foreground">None yet.</li>}
+        </ul>
+        <div className="grid gap-2 sm:grid-cols-[1fr_150px_150px_auto]">
+          <Input placeholder="e.g. Teardown week" value={v.name} onChange={(e) => setV({ ...v, name: e.target.value })} aria-label="Campaign name" />
+          <Input type="date" value={v.startDate} onChange={(e) => setV({ ...v, startDate: e.target.value })} aria-label="Start date" />
+          <Input type="date" value={v.endDate} onChange={(e) => setV({ ...v, endDate: e.target.value })} aria-label="End date" />
+          <Button disabled={pending || !v.name.trim()} onClick={() => run(() => saveContentCampaign(v), { success: "Content campaign added", onSuccess: () => setV({ name: "", startDate: "", endDate: "" }) })}>
             <Plus /> Add
           </Button>
         </div>
@@ -426,14 +462,17 @@ export function SettingsView(props: Props) {
       <TabsList className="flex-wrap">
         <TabsTrigger value="profile">Profile</TabsTrigger>
         <TabsTrigger value="portfolio">Portfolio</TabsTrigger>
-        <TabsTrigger value="pillars">Content pillars</TabsTrigger>
+        <TabsTrigger value="pillars">Pillars & campaigns</TabsTrigger>
         <TabsTrigger value="statuses">Lead statuses</TabsTrigger>
         <TabsTrigger value="safety">Metrics & safety</TabsTrigger>
         <TabsTrigger value="data">Data & audit</TabsTrigger>
       </TabsList>
       <TabsContent value="profile"><ProfileTab profile={props.profile} /></TabsContent>
       <TabsContent value="portfolio"><PortfolioTab portfolio={props.portfolio} /></TabsContent>
-      <TabsContent value="pillars"><PillarsTab pillars={props.pillars} /></TabsContent>
+      <TabsContent value="pillars" className="space-y-4">
+        <PillarsTab pillars={props.pillars} />
+        <ContentCampaignsCard campaigns={props.contentCampaigns} />
+      </TabsContent>
       <TabsContent value="statuses"><StatusesTab statuses={props.statuses} /></TabsContent>
       <TabsContent value="safety"><MetricsAndSafetyTab profile={props.profile} suppression={props.suppression} /></TabsContent>
       <TabsContent value="data"><DataTab audit={props.audit} isDemo={props.profile.isDemo} /></TabsContent>
