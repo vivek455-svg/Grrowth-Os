@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState, useTransition } from "react";
+import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import { CalendarClock, KanbanSquare, List, Pencil, Plus, Settings2, Trash2, X as XIcon } from "lucide-react";
@@ -253,9 +253,15 @@ export function PipelineBoard({
   const [creating, setCreating] = useState<string | null>(null);
   const [stagesOpen, setStagesOpen] = useState(false);
   const [dragOver, setDragOver] = useState<string | null>(null);
-  const [optimistic, setOptimistic] = useState<Record<string, string>>({});
+  // Optimistic stage moves are discarded as soon as fresh rows arrive from the server.
+  const [opt, setOpt] = useState<{ rows: Row[]; map: Record<string, string> }>({ rows, map: {} });
+  const optimistic = opt.rows === rows ? opt.map : {};
+  const setOptimistic = (fn: Record<string, string> | ((m: Record<string, string>) => Record<string, string>)) =>
+    setOpt((o) => {
+      const base = o.rows === rows ? o.map : {};
+      return { rows, map: typeof fn === "function" ? fn(base) : fn };
+    });
   const [, start] = useTransition();
-  useEffect(() => setOptimistic({}), [rows]);
 
   const stageOf = (r: Row) => optimistic[r.o.id] ?? r.o.stage;
   const byStage = useMemo(() => new Map(stages.map((s) => [s.key, rows.filter((r) => stageOf(r) === s.key)])), [stages, rows, optimistic]); // eslint-disable-line react-hooks/exhaustive-deps

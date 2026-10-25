@@ -43,7 +43,7 @@ export default async function ProspectsPage({ searchParams }: PageProps<"/prospe
         actions={
           <>
             <Button asChild variant="outline" size="sm">
-              <a href="/api/export/prospects">
+              <a href="/api/export/prospects" download>
                 <Download /> Export
               </a>
             </Button>

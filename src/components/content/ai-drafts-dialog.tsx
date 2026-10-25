@@ -45,7 +45,6 @@ export function AIDraftsDialog({
   const [saving, startSaving] = useTransition();
 
   function generate() {
-    setError(null);
     startLoading(async () => {
       const res = await generateLab({
         mode,
@@ -56,6 +55,7 @@ export function AIDraftsDialog({
       if (res.ok) {
         setResult(res.data);
         setEdits({});
+        setError(null);
       } else setError(res.error);
     });
   }

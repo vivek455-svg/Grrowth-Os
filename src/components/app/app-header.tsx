@@ -72,13 +72,11 @@ function GlobalSearch() {
   }, []);
 
   useEffect(() => {
-    if (!q.trim()) {
-      setResults(null);
-      return;
-    }
+    if (!q.trim()) return;
     const t = setTimeout(() => startTransition(async () => setResults(await globalSearch(q))), 150);
     return () => clearTimeout(t);
   }, [q]);
+  const shown = q.trim() ? results : null;
 
   const go = (href: string) => {
     setOpen(false);
@@ -105,11 +103,11 @@ function GlobalSearch() {
         <CommandInput placeholder="Search prospects, posts, campaigns…" value={q} onValueChange={setQ} />
         <CommandList>
           <CommandEmpty>No results.</CommandEmpty>
-          {results && (
+          {shown && (
             <>
-              {results.prospects.length > 0 && (
+              {shown.prospects.length > 0 && (
                 <CommandGroup heading="Prospects">
-                  {results.prospects.map((p) => (
+                  {shown.prospects.map((p) => (
                     <CommandItem key={p.id} value={`p-${p.id}`} onSelect={() => go(`/prospects/${p.id}`)}>
                       <Users />
                       {p.name}
@@ -118,9 +116,9 @@ function GlobalSearch() {
                   ))}
                 </CommandGroup>
               )}
-              {results.content.length > 0 && (
+              {shown.content.length > 0 && (
                 <CommandGroup heading="Content">
-                  {results.content.map((c) => (
+                  {shown.content.map((c) => (
                     <CommandItem key={c.id} value={`c-${c.id}`} onSelect={() => go(`/content/${c.id}`)}>
                       <FileText />
                       {c.title}
@@ -128,9 +126,9 @@ function GlobalSearch() {
                   ))}
                 </CommandGroup>
               )}
-              {results.campaigns.length > 0 && (
+              {shown.campaigns.length > 0 && (
                 <CommandGroup heading="Campaigns">
-                  {results.campaigns.map((c) => (
+                  {shown.campaigns.map((c) => (
                     <CommandItem key={c.id} value={`cp-${c.id}`} onSelect={() => go(`/campaigns/${c.id}`)}>
                       <Megaphone />
                       {c.name}
@@ -138,9 +136,9 @@ function GlobalSearch() {
                   ))}
                 </CommandGroup>
               )}
-              {results.opportunities.length > 0 && (
+              {shown.opportunities.length > 0 && (
                 <CommandGroup heading="Opportunities">
-                  {results.opportunities.map((o) => (
+                  {shown.opportunities.map((o) => (
                     <CommandItem key={o.id} value={`o-${o.id}`} onSelect={() => go(`/opportunities?open=${o.id}`)}>
                       <Briefcase />
                       {o.name}

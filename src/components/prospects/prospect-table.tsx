@@ -281,13 +281,16 @@ export function ProspectTable({ rows, options, total }: { rows: ProspectRow[]; o
   const router = useRouter();
   const params = useSearchParams();
   const { openNewProspect } = useShell();
-  const [selected, setSelected] = useState<Set<string>>(new Set());
+  // Selection resets whenever the filters (URL params) change.
+  const paramKey = params.toString();
+  const [sel, setSel] = useState<{ key: string; ids: Set<string> }>({ key: paramKey, ids: new Set() });
+  const selected = sel.key === paramKey ? sel.ids : new Set<string>();
+  const setSelected = (ids: Set<string>) => setSel({ key: paramKey, ids });
   const statusMap = useMemo(() => new Map(options.statuses.map((s) => [s.key, s])), [options.statuses]);
   const allSelected = rows.length > 0 && rows.every((r) => selected.has(r.id));
   const filtered = FILTER_KEYS.some((k) => params.get(k));
   const dupes = rows.filter((r) => r.duplicateOf).length;
 
-  useEffect(() => setSelected(new Set()), [params]);
 
   return (
     <div className="space-y-3">

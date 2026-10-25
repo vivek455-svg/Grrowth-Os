@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
@@ -47,6 +47,7 @@ import {
   updateContentItem,
 } from "@/server/actions/content";
 import { useAction } from "@/hooks/use-action";
+import { publishViaAPI } from "@/server/actions/integrations";
 import { engagementRate, engagements } from "@/lib/metrics/content";
 import { fmtDateTime, fmtNumber, fmtPercent, toLocalInput } from "@/lib/format";
 import { CTA_TYPE_LABEL, FORMAT_LABEL, GOAL_LABEL, HOOK_LABEL, PLATFORM_LABEL } from "@/lib/labels";
@@ -64,11 +65,13 @@ function VersionPanel({
   version,
   snapshots,
   aiEnabled,
+  canPublishViaAPI,
   onAI,
 }: {
   version: ContentVersion;
   snapshots: MetricsSnapshot[];
   aiEnabled: boolean;
+  canPublishViaAPI: boolean;
   onAI: (mode: LabMode, v: ContentVersion, target?: Platform) => void;
 }) {
   const router = useRouter();
@@ -84,6 +87,9 @@ function VersionPanel({
   });
   const [publishOpen, setPublishOpen] = useState(false);
   const [metricsOpen, setMetricsOpen] = useState(false);
+  const [apiOpen, setApiOpen] = useState(false);
+  const [apiConfirmed, setApiConfirmed] = useState(false);
+  const [publishing, startPublish] = useTransition();
   const dirty =
     v.body !== version.body ||
     v.format !== version.format ||
@@ -294,9 +300,14 @@ function VersionPanel({
                   <ExternalLink /> Open {PLATFORM_LABEL[version.platform]} composer
                 </a>
               </Button>
-              <Button size="sm" onClick={() => setPublishOpen(true)} disabled={!v.body.trim() || dirty}>
+              <Button size="sm" variant={canPublishViaAPI ? "outline" : "default"} onClick={() => setPublishOpen(true)} disabled={!v.body.trim() || dirty}>
                 <Send /> I published it
               </Button>
+              {canPublishViaAPI && (version.format === "text" || version.format === "link") && (
+                <Button size="sm" onClick={() => { setApiConfirmed(false); setApiOpen(true); }} disabled={!v.body.trim() || dirty || over}>
+                  <Send /> Publish now via {PLATFORM_LABEL[version.platform]}
+                </Button>
+              )}
               {dirty && <span className="self-center text-xs text-muted-foreground">Save first</span>}
             </>
           )}
@@ -369,6 +380,38 @@ function VersionPanel({
         </Card>
       )}
 
+      <AlertDialog open={apiOpen} onOpenChange={setApiOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Publish to {PLATFORM_LABEL[version.platform]} now?</AlertDialogTitle>
+            <AlertDialogDescription>This posts immediately from your connected account. It's marked published only after {PLATFORM_LABEL[version.platform]} confirms it.</AlertDialogDescription>
+          </AlertDialogHeader>
+          <p className="max-h-60 overflow-auto rounded-md border bg-muted/40 p-3 text-sm whitespace-pre-line">{v.body}</p>
+          <label className="flex items-center gap-2 text-sm">
+            <input type="checkbox" className="size-4" checked={apiConfirmed} onChange={(e) => setApiConfirmed(e.target.checked)} />
+            I've reviewed this post and want to publish it.
+          </label>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={!apiConfirmed || publishing}
+              onClick={(e) => {
+                e.preventDefault();
+                startPublish(async () => {
+                  const res = await publishViaAPI({ versionId: version.id, confirmed: true });
+                  if (res.ok) {
+                    toast.success("Published", res.data.url ? { action: { label: "Open", onClick: () => window.open(res.data.url!, "_blank") } } : undefined);
+                    setApiOpen(false);
+                    router.refresh();
+                  } else toast.error(res.error);
+                });
+              }}
+            >
+              {publishing && <Spinner />} Publish
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
       {publishOpen && <MarkPublishedDialog versionId={version.id} platform={version.platform} open onOpenChange={setPublishOpen} />}
       {metricsOpen && <RecordMetricsDialog versionId={version.id} platform={version.platform} open onOpenChange={setMetricsOpen} />}
     </div>
@@ -406,6 +449,7 @@ export function ContentEditor({
   campaigns,
   linkedOpps,
   aiEnabled,
+  connected,
 }: {
   item: ContentItem;
   versions: ContentVersion[];
@@ -415,6 +459,7 @@ export function ContentEditor({
   campaigns: { id: string; name: string }[];
   linkedOpps: { id: string; name: string; stage: string }[];
   aiEnabled: boolean;
+  connected: Partial<Record<Platform, boolean>>;
 }) {
   const router = useRouter();
   const params = useSearchParams();
@@ -433,17 +478,20 @@ export function ContentEditor({
     notes: item.notes ?? "",
   });
   const [confirmDelete, setConfirmDelete] = useState(false);
-  const [ai, setAI] = useState<{ mode: LabMode; version: ContentVersion; target?: Platform } | null>(null);
   const platforms = useMemo(() => new Set(versions.map((v) => v.platform)), [versions]);
-
   // ?repurpose=x&from=<versionId>: open the repurpose flow from recommendations / library.
+  const repurposeTarget = params.get("repurpose") as Platform | null;
+  const repurposeFrom = versions.find((v) => v.id === params.get("from")) ?? versions[0];
+  const [ai, setAI] = useState<{ mode: LabMode; version: ContentVersion; target?: Platform } | null>(() =>
+    aiEnabled && repurposeTarget && repurposeFrom && !platforms.has(repurposeTarget) ? { mode: "repurpose", version: repurposeFrom, target: repurposeTarget } : null,
+  );
+
+  // Without AI, repurposing creates a copy of the source text to adapt by hand.
   useEffect(() => {
-    const target = params.get("repurpose") as Platform | null;
-    const from = versions.find((v) => v.id === params.get("from")) ?? versions[0];
-    if (target && from && !platforms.has(target)) {
-      if (aiEnabled) setAI({ mode: "repurpose", version: from, target });
-      else
-        run(() => addVersion({ contentItemId: item.id, platform: target, derivedFromVersionId: from.id }), {
+    const target = repurposeTarget;
+    const from = repurposeFrom;
+    if (target && from && !platforms.has(target) && !aiEnabled) {
+      run(() => addVersion({ contentItemId: item.id, platform: target, derivedFromVersionId: from.id }), {
           success: `${PLATFORM_LABEL[target]} version created from the original — edit it to fit the platform.`,
           onSuccess: (d) => {
             setTab(d.id);
@@ -577,7 +625,7 @@ export function ContentEditor({
               </TabsList>
               {versions.map((v) => (
                 <TabsContent key={v.id} value={v.id} className="mt-3">
-                  <VersionPanel key={`${v.id}-${v.updatedAt.getTime()}`} version={v} snapshots={snapshots.filter((s) => s.versionId === v.id)} aiEnabled={aiEnabled} onAI={(mode, version, target) => setAI({ mode, version, target })} />
+                  <VersionPanel key={`${v.id}-${v.updatedAt.getTime()}`} version={v} snapshots={snapshots.filter((s) => s.versionId === v.id)} aiEnabled={aiEnabled} canPublishViaAPI={!!connected[v.platform]} onAI={(mode, version, target) => setAI({ mode, version, target })} />
                 </TabsContent>
               ))}
             </Tabs>

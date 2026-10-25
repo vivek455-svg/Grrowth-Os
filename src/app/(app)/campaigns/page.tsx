@@ -35,7 +35,7 @@ export default async function CampaignsPage() {
         actions={
           <>
             <Button asChild size="sm" variant="outline">
-              <a href="/api/export/campaigns">
+              <a href="/api/export/campaigns" download>
                 <Download /> Export
               </a>
             </Button>

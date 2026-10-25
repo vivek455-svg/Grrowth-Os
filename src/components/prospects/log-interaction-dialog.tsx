@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
 import { Button } from "@/components/ui/button";
@@ -59,7 +59,7 @@ export function LogInteractionDialog({
       followUpAt: "",
     },
   });
-  const type = form.watch("type") as EventType;
+  const type = useWatch({ control: form.control, name: "type" }) as EventType;
   const direction = LOGGABLE_EVENTS.find((e) => e.type === type)?.direction;
 
   function submit(v: Values) {

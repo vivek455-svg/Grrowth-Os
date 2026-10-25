@@ -1,7 +1,7 @@
 "use server";
 
 import { z } from "zod";
-import { and, asc, desc, eq, inArray, isNull } from "drizzle-orm";
+import { asc, eq, isNull } from "drizzle-orm";
 import { contentIdeas, contentItems, contentPillars, contentPlatformVersions, portfolioProjects, profiles } from "@/db/schema";
 import { defineAIAction, UserError } from "@/server/action";
 import { withGeneration } from "@/server/ai";

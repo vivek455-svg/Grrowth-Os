@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useTransition } from "react";
+import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { AlertTriangle, CalendarPlus, ClipboardCopy, FilePlus2, Lightbulb, Plug, RefreshCw, Sparkles, WandSparkles } from "lucide-react";
@@ -57,7 +57,7 @@ function ItemCard({
   const [platform, setPlatform] = useState<Platform>(item.platform ?? defaultPlatform);
   const [when, setWhen] = useState("");
   const [busy, start] = useTransition();
-  const sel = useRef<{ start: number; end: number } | null>(null);
+  const [sel, setSel] = useState<{ start: number; end: number } | null>(null);
   const isIdea = !item.body.trim() || item.body.length < 200;
 
   function save(kind: "draft" | "idea" | "calendar") {
@@ -85,7 +85,7 @@ function ItemCard({
   }
 
   function rewriteSelection() {
-    const s = sel.current;
+    const s = sel;
     const passage = s && s.end > s.start ? body.slice(s.start, s.end) : null;
     start(async () => {
       const res = await generateLab({
@@ -128,7 +128,7 @@ function ItemCard({
         <Textarea
           value={body}
           onChange={(e) => setBody(e.target.value)}
-          onSelect={(e) => (sel.current = { start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd })}
+          onSelect={(e) => setSel({ start: e.currentTarget.selectionStart, end: e.currentTarget.selectionEnd })}
           rows={isIdea ? 3 : 8}
           aria-label={`${item.title} text`}
         />
@@ -159,7 +159,7 @@ function ItemCard({
             <Lightbulb /> Save idea
           </Button>
           <Button size="xs" variant="ghost" onClick={rewriteSelection} disabled={busy || !body.trim()} title="Select text first to rewrite only that part">
-            <WandSparkles /> Rewrite {sel.current && sel.current.end > sel.current.start ? "selection" : "post"}
+            <WandSparkles /> Rewrite {sel && sel.end > sel.start ? "selection" : "post"}
           </Button>
           <Button
             size="xs"

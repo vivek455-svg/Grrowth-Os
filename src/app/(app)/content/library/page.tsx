@@ -10,6 +10,7 @@ import { IdeasList, LibraryView, type LibraryPost } from "@/components/content/l
 import { loadForUser } from "@/server/page";
 import { libraryRows, openIdeas } from "@/server/queries/content";
 import { contentPillars, type Platform } from "@/db/schema";
+import { daysAgoMs } from "@/lib/metrics/period";
 
 export const metadata = { title: "Content Library" };
 
@@ -63,7 +64,7 @@ export default async function LibraryPage({ searchParams }: PageProps<"/content/
 
   const q = str("q")?.toLowerCase();
   const period = Number(str("period") ?? 0);
-  const since = period ? Date.now() - period * 86400000 : 0;
+  const since = period ? daysAgoMs(period) : 0;
   const all = posts as (LibraryPost & { pillarId: string | null; search: string })[];
   posts = all.filter(
     (p) =>
@@ -106,7 +107,7 @@ export default async function LibraryPage({ searchParams }: PageProps<"/content/
               </Link>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <a href="/api/export/content">
+              <a href="/api/export/content" download>
                 <Download /> Export
               </a>
             </Button>

@@ -1,6 +1,7 @@
 import "server-only";
 import { cache } from "react";
 import { redirect } from "next/navigation";
+import { connection } from "next/server";
 import { sql } from "drizzle-orm";
 import { asService } from "@/db/client";
 import { demoMode, supabaseConfigured } from "@/lib/env";
@@ -19,6 +20,8 @@ async function ensureDemoUser() {
 
 /** Resolves the signed-in user once per request. Returns null when signed out. */
 export const getSessionUser = cache(async (): Promise<SessionUser | null> => {
+  // Always render per request: user data must never be baked into a static page.
+  await connection();
   if (supabaseConfigured()) {
     const supabase = await supabaseServer();
     // getUser() validates the JWT with Supabase Auth rather than trusting the cookie.

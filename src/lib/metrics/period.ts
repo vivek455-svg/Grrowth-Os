@@ -35,3 +35,8 @@ export function safeRate(numerator: number, denominator: number | null | undefin
 export function parseRange(value: string | string[] | undefined): RangeKey {
   return value === "7d" || value === "90d" || value === "custom" ? value : "30d";
 }
+
+/** Epoch milliseconds `days` days before now (request-time helper for server components). */
+export function daysAgoMs(days: number) {
+  return Date.now() - days * 86400000;
+}
