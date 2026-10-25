@@ -217,3 +217,14 @@ export async function openIdeas(tx: Tx) {
     .where(eq(contentIdeas.status, "open"))
     .orderBy(desc(contentIdeas.createdAt));
 }
+
+/** Lightweight list of posts with copy, for choosing a source in the Lab. */
+export async function labSources(tx: Tx) {
+  return tx
+    .select({ id: contentPlatformVersions.id, title: contentItems.title, platform: contentPlatformVersions.platform, status: contentPlatformVersions.status })
+    .from(contentPlatformVersions)
+    .innerJoin(contentItems, eq(contentItems.id, contentPlatformVersions.contentItemId))
+    .where(and(isNull(contentItems.archivedAt), inArray(contentPlatformVersions.status, ["draft", "ready", "scheduled", "published"])))
+    .orderBy(desc(contentPlatformVersions.updatedAt))
+    .limit(100);
+}

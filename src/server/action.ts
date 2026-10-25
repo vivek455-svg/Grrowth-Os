@@ -5,6 +5,7 @@ import { withUser, type Tx } from "@/db/client";
 import { activityLogs } from "@/db/schema";
 import { log } from "@/lib/logger";
 import { requireUser, type SessionUser } from "./auth";
+import { AIError } from "./ai/types";
 
 export type ActionResult<T = null> =
   | { ok: true; data: T }
@@ -46,13 +47,41 @@ export function defineAction<S extends z.ZodType, R>(
       revalidatePath("/", "layout");
       return { ok: true, data };
     } catch (e) {
-      if (e instanceof UserError) return { ok: false, error: e.message };
+      if (e instanceof UserError || e instanceof AIError) return { ok: false, error: e.message };
       const code = pgCode(e);
       if (code === "23505") return { ok: false, error: "A record with the same unique details already exists." };
       if (code === "23514" || code === "23503") return { ok: false, error: "That change isn't valid for this record." };
       // Next.js uses thrown errors for redirect()/notFound(); let them propagate.
       if (e && typeof e === "object" && "digest" in e) throw e;
       log("error", "action_failed", { action: name, userId: user.id, error: e });
+      return { ok: false, error: "Something went wrong. Please try again." };
+    }
+  };
+}
+
+/**
+ * Like defineAction, but without a surrounding transaction: AI calls can take a while and
+ * must not hold a database connection. Use `ctx.db(fn)` for short RLS-scoped transactions.
+ */
+export function defineAIAction<S extends z.ZodType, R>(
+  name: string,
+  schema: S,
+  handler: (input: z.output<S>, ctx: { user: SessionUser; db: <T>(fn: (tx: Tx) => Promise<T>) => Promise<T> }) => Promise<R>,
+) {
+  return async (raw: z.input<S>): Promise<ActionResult<R>> => {
+    const parsed = schema.safeParse(raw);
+    if (!parsed.success) {
+      const flat = z.flattenError(parsed.error);
+      return { ok: false, error: flat.formErrors[0] ?? "Please check the highlighted fields.", fieldErrors: flat.fieldErrors as Record<string, string[] | undefined> };
+    }
+    const user = await requireUser();
+    try {
+      const data = await handler(parsed.data, { user, db: (fn) => withUser(user.id, fn) });
+      return { ok: true, data };
+    } catch (e) {
+      if (e instanceof UserError || e instanceof AIError) return { ok: false, error: e.message };
+      if (e && typeof e === "object" && "digest" in e) throw e;
+      log("error", "ai_action_failed", { action: name, userId: user.id, error: e });
       return { ok: false, error: "Something went wrong. Please try again." };
     }
   };

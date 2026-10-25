@@ -60,7 +60,7 @@ function compareGroups(
   kind: string,
   noun: string,
 ): InsightCandidate | null {
-  const groups = groupPerformance(rows, keyOf as (r: PostPerformance) => string | null).filter((g) => g.sufficient && g.medianRate !== null);
+  const groups = groupPerformance(rows, keyOf).filter((g) => g.sufficient && g.medianRate !== null);
   if (groups.length < 2) return null;
   const [top, ...rest] = groups;
   const restRates = rest.flatMap((g) =>

@@ -129,6 +129,22 @@ export const saveVersion = defineAction(
   },
 );
 
+/** Applies an approved AI suggestion (or other targeted edit) to an unpublished version. */
+export const patchVersion = defineAction(
+  "content.patch_version",
+  z.object({ id: uuid, body: z.string().max(25000).optional(), cta: optionalText(500) }),
+  async ({ id, ...patch }, { tx }) => {
+    const [v] = await tx.select().from(contentPlatformVersions).where(eq(contentPlatformVersions.id, id));
+    if (!v) throw new UserError("Post version not found.");
+    if (v.status === "published" && patch.body !== undefined) throw new UserError("Published text can't be changed.");
+    await tx
+      .update(contentPlatformVersions)
+      .set({ ...(patch.body !== undefined ? { body: patch.body } : {}), ...(patch.cta ? { cta: patch.cta } : {}) })
+      .where(eq(contentPlatformVersions.id, id));
+    return null;
+  },
+);
+
 export const addVersion = defineAction(
   "content.add_version",
   z.object({ contentItemId: uuid, platform, format: format.default("text"), derivedFromVersionId: uuid.nullable().optional(), body: z.string().max(25000).optional() }),

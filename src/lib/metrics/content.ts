@@ -267,8 +267,8 @@ export function median(values: number[]): number | null {
  * Group posts by an attribute (pillar, format, hook style, length bucket…).
  * Uses the median engagement rate (robust to a single viral post) and reports sample size.
  */
-export function groupPerformance(rows: PostPerformance[], keyOf: (r: PostPerformance) => string | null): GroupStat[] {
-  const groups = new Map<string, PostPerformance[]>();
+export function groupPerformance<T extends PostPerformance>(rows: T[], keyOf: (r: T) => string | null): GroupStat[] {
+  const groups = new Map<string, T[]>();
   for (const r of rows) {
     const k = keyOf(r);
     if (!k) continue;
