@@ -9,6 +9,7 @@ import { Field, FieldGroup, FieldLabel } from "@/components/ui/field";
 import { Input } from "@/components/ui/input";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Spinner } from "@/components/ui/spinner";
+import { LogoMark } from "@/components/app/logo-mark";
 
 export function LoginForm({ url, anonKey, error }: { url: string; anonKey: string; error: string | null }) {
   const router = useRouter();
@@ -39,7 +40,7 @@ export function LoginForm({ url, anonKey, error }: { url: string; anonKey: strin
   return (
     <Card className="w-full max-w-sm">
       <CardHeader>
-        <div className="mb-2 flex size-8 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">GO</div>
+        <LogoMark className="mb-2" />
         <CardTitle>{mode === "signup" ? "Create your workspace" : "Sign in to Growth OS"}</CardTitle>
         <CardDescription>{mode === "magic" ? "We'll email you a sign-in link." : "Use your email and password."}</CardDescription>
       </CardHeader>

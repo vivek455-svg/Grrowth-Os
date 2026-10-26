@@ -5,6 +5,7 @@ import { loadForUser } from "@/server/page";
 import { profiles } from "@/db/schema";
 import { aiStatus } from "@/server/ai";
 import { integrationDef } from "@/server/integrations/registry";
+import { LogoMark } from "@/components/app/logo-mark";
 
 export const metadata = { title: "Set up your workspace" };
 
@@ -14,7 +15,7 @@ export default async function OnboardingPage() {
   return (
     <main className="flex min-h-screen flex-col items-center px-4 py-10 sm:py-16">
       <div className="mb-8 flex items-center gap-2">
-        <div className="flex size-8 items-center justify-center rounded-md bg-primary text-xs font-semibold text-primary-foreground">GO</div>
+        <LogoMark />
         <span className="text-sm font-semibold">Growth OS</span>
       </div>
       <OnboardingWizard

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { LogoMark } from "@/components/app/logo-mark";
 import { usePathname } from "next/navigation";
 import {
   BarChart3,
@@ -85,9 +86,7 @@ export function AppSidebar({ followUpsDue, isDemo, businessName }: { followUpsDu
           <SidebarMenuItem>
             <SidebarMenuButton size="lg" asChild>
               <Link href="/">
-                <div className="flex aspect-square size-8 items-center justify-center rounded-md bg-primary text-primary-foreground">
-                  <span className="text-xs font-semibold tracking-tight">GO</span>
-                </div>
+                <LogoMark />
                 <div className="grid flex-1 text-left leading-tight">
                   <span className="truncate text-sm font-semibold">Growth OS</span>
                   <span className="truncate text-xs text-muted-foreground">{businessName ?? "Your workspace"}</span>
@@ -105,14 +104,19 @@ export function AppSidebar({ followUpsDue, isDemo, businessName }: { followUpsDu
               <SidebarMenu>
                 {group.items.map((item) => (
                   <SidebarMenuItem key={item.href}>
-                    <SidebarMenuButton asChild isActive={isActive(pathname, item.href)} tooltip={item.title}>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={isActive(pathname, item.href)}
+                      tooltip={item.title}
+                      className="transition-colors data-[active=true]:[&>svg]:text-primary"
+                    >
                       <Link href={item.href}>
                         <item.icon />
                         <span>{item.title}</span>
                       </Link>
                     </SidebarMenuButton>
                     {item.badge === "followups" && followUpsDue > 0 && (
-                      <SidebarMenuBadge className="num" aria-label={`${followUpsDue} due`}>
+                      <SidebarMenuBadge className="num rounded-full bg-brand/12 text-brand peer-hover/menu-button:text-brand peer-data-active/menu-button:text-brand" aria-label={`${followUpsDue} due`}>
                         {followUpsDue}
                       </SidebarMenuBadge>
                     )}

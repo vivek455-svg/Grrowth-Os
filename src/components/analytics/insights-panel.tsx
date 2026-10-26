@@ -35,11 +35,15 @@ export function RecommendationList({ items, emptyNote }: { items: Recommendation
     return <p className="py-6 text-center text-sm text-muted-foreground">{emptyNote ?? "No recommendations right now. They appear as your data grows."}</p>;
   return (
     <ul className="divide-y">
-      {items.map((r) => (
+      {items.map((r, i) => (
         <li key={r.id} className="flex flex-col gap-2 py-3 first:pt-0 last:pb-0">
           <div className="flex items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-sm font-medium">{r.title}</p>
+              <p className="flex items-center gap-2 text-sm font-medium">
+                {/* The single highest-priority action gets the accent dot. */}
+                {i === 0 && <span className="size-1.5 shrink-0 rounded-full bg-brand" role="img" aria-label="Top priority" />}
+                {r.title}
+              </p>
               <p className="mt-0.5 text-sm text-muted-foreground">{r.reasoning}</p>
             </div>
             <div className="flex shrink-0 items-center gap-0.5">
